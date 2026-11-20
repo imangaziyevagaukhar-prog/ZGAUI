@@ -190,6 +190,7 @@ function girl(t) {
     g.aF = -2.6; g.kF = up; g.kB = up; g.happy = 1;
   }
   g.hf = ease(seg(t, 37.4, 38.2));
+  g.tongue = (t >= 38.4 && t < 42.5) || (t >= 2.2 && t < 3.6) || t >= 44;
   return g;
 }
 
@@ -309,7 +310,7 @@ function plant(w, t) {
 
 let SPOUT = null;
 function drawGirl(g, t) {
-  const SK = '#ebb58f', SKD = '#d79c76', HAIR = '#2b1912', DR = '#d6334a', VEST = '#1f5f6b', GOLD = '#f2c14e', BOOT = '#6e2430';
+  const SK = '#eab38c', PANTS = '#2c3a7a', HAIR = '#2b1912', JK = '#1e1e26', JKL = '#3a3a46', PINK = '#f2a6c0', BOOT = '#2a2a30';
   ctx.fillStyle = 'rgba(40,60,20,.25)'; ell(g.x, GY + 4, 48 * (1 - g.jump / 150), 9);
   ctx.save(); ctx.translate(g.x, GY - g.jump);
   ctx.scale(g.face * (g.spin ? Math.cos(g.spin) : 1), 1);
@@ -317,7 +318,7 @@ function drawGirl(g, t) {
   const hipY = -92 + c * 58 + bob, sw = g.walk ? Math.sin(g.ph) * .5 : 0, spread = c * .55;
   const leg = (x, a) => {
     ctx.save(); ctx.translate(x, hipY); ctx.rotate(a); const L = (-hipY) / Math.cos(a);
-    ctx.fillStyle = SKD; rr(-7, 0, 14, Math.max(8, L - 6), 7);
+    ctx.fillStyle = PANTS; rr(-8, 0, 16, Math.max(8, L - 6), 8);
     ctx.fillStyle = BOOT; ctx.rotate(-a); ell(Math.sin(-a) * L * 0 + 5 - Math.sin(a) * L, Math.cos(a) * L - 6, 14, 8); ctx.restore();
   };
   leg(-10, sw + spread); leg(10, -sw - spread);
@@ -326,42 +327,64 @@ function drawGirl(g, t) {
   const shY = hipY - 78, headY = shY - 50;
   const arm = (x, a, col) => {
     ctx.save(); ctx.translate(x, shY + 8); ctx.rotate(a);
-    ctx.fillStyle = col; rr(-8, -6, 16, 32, 8);
-    ctx.fillStyle = SK; rr(-6, 20, 12, 34, 6); circle(0, 56, 8.5); ctx.restore();
+    ctx.fillStyle = col; rr(-10, -8, 20, 58, 10);
+    ctx.strokeStyle = JKL; ctx.lineWidth = 2; [12, 28].forEach(y => { ctx.beginPath(); ctx.moveTo(-9, y); ctx.lineTo(9, y + 2); ctx.stroke(); });
+    ctx.fillStyle = SK; circle(0, 56, 8.5); ctx.restore();
     return [x - 56 * Math.sin(a), shY + 8 + 56 * Math.cos(a)];
   };
-  arm(-16, lerp(sw * .8, 2.6, g.kB), '#a8243a');
+  arm(-16, lerp(sw * .8, 2.6, g.kB), '#15151b');
 
-  // back hair and braids
-  ctx.fillStyle = HAIR; ell(0, headY + 4, 46, 46);
-  [-1, 1].forEach(sd => {
-    for (let k = 0; k < 5; k++) circle(sd * (37 - k), headY + 30 + k * 15, 10 - k * .8);
-    ctx.fillStyle = DR; ell(sd * 33 - 6, headY + 104, 7, 5, -.5); ell(sd * 33 + 6, headY + 104, 7, 5, .5); ctx.fillStyle = HAIR;
-  });
+  // two braids rising from the crown and falling down the back
+  const braid = (ox, oy, dark) => {
+    for (let k = 0; k <= 16; k++) {
+      const u = k / 16, v = 1 - u;
+      const x = v*v*v*(-2) + 3*v*v*u*(-18) + 3*v*u*u*(-84) + u*u*u*(-62) + ox;
+      const y = v*v*v*(headY-44) + 3*v*v*u*(headY-100) + 3*v*u*u*(headY-50) + u*u*u*(headY+70) + oy;
+      ctx.fillStyle = dark ? '#1f120d' : HAIR; ell(x, y, 10 - u * 3.5, 8 - u * 2.5, u * 1.6);
+      ctx.fillStyle = 'rgba(120,80,60,.35)'; ell(x - 2, y - 2, 4 - u, 2.5, u * 1.6 + .6);
+    }
+  };
+  braid(-10, 6, true); braid(0, 0, false);
+  ctx.fillStyle = '#5a3a24'; ell(-4, headY - 46, 7, 5, -.4);
 
-  // dress
-  ctx.fillStyle = DR; ctx.beginPath(); ctx.moveTo(-22, shY); ctx.lineTo(22, shY); ctx.lineTo(54, hipY + 24);
-  ctx.quadraticCurveTo(0, hipY + 34, -54, hipY + 24); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = GOLD; ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.moveTo(-50, hipY + 15); ctx.quadraticCurveTo(0, hipY + 25, 50, hipY + 15); ctx.stroke();
-  ctx.lineWidth = 2.5;
-  for (let x = -34; x <= 34; x += 17) { // ram-horn ornament
-    const y = hipY + 10 + (1 - (x / 50) ** 2) * 7;
-    ctx.beginPath(); ctx.arc(x - 4, y, 4, Math.PI * .1, Math.PI * 1.4, true); ctx.stroke();
-    ctx.beginPath(); ctx.arc(x + 4, y, 4, Math.PI * .9, -Math.PI * .4); ctx.stroke();
-  }
-  // vest (камзол)
-  ctx.fillStyle = VEST; ctx.beginPath(); ctx.moveTo(-21, shY); ctx.lineTo(21, shY); ctx.lineTo(27, shY + 46); ctx.lineTo(-27, shY + 46); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = GOLD; ctx.lineWidth = 3; ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0, shY + 4); ctx.lineTo(0, shY + 44); ctx.stroke();
+  // pink drawstring bag
+  ctx.fillStyle = PINK; ctx.beginPath(); ctx.moveTo(-50, hipY - 6); ctx.quadraticCurveTo(-66, hipY + 30, -44, hipY + 34);
+  ctx.quadraticCurveTo(-22, hipY + 34, -28, hipY - 6); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#e88aaa'; rr(-52, hipY - 12, 26, 9, 4);
+  ctx.strokeStyle = '#111'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-40, hipY - 12); ctx.lineTo(-26, shY + 6); ctx.stroke();
 
-  // neck + head
-  ctx.fillStyle = SK; ctx.fillRect(-7, shY - 12, 14, 14); circle(0, headY, 42);
-  ctx.save(); ctx.beginPath(); ctx.arc(0, headY, 43.5, 0, TAU); ctx.clip();
-  ctx.fillStyle = HAIR; ctx.beginPath(); ctx.moveTo(-50, headY - 60); ctx.lineTo(50, headY - 60); ctx.lineTo(50, headY - 12);
-  ctx.quadraticCurveTo(34, headY - 2, 24, headY - 16); ctx.quadraticCurveTo(12, headY - 2, 0, headY - 18);
-  ctx.quadraticCurveTo(-16, headY - 4, -28, headY - 14); ctx.lineTo(-50, headY - 4); ctx.closePath(); ctx.fill();
+  // black puffer jacket
+  ctx.fillStyle = JK; ctx.beginPath(); ctx.moveTo(-26, shY - 2); ctx.quadraticCurveTo(0, shY - 10, 26, shY - 2);
+  ctx.quadraticCurveTo(44, hipY - 10, 42, hipY + 26); ctx.quadraticCurveTo(0, hipY + 36, -42, hipY + 26);
+  ctx.quadraticCurveTo(-44, hipY - 10, -26, shY - 2); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = JKL; ctx.lineWidth = 2.5;
+  [24, 50, 76].forEach(y => { const w = 30 + y * .15; ctx.beginPath(); ctx.moveTo(-w, shY + y); ctx.quadraticCurveTo(0, shY + y + 6, w, shY + y); ctx.stroke(); });
+  ctx.strokeStyle = '#6a6a74'; ctx.lineWidth = 2; ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(12, shY + 2); ctx.lineTo(16, hipY + 30); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = '#c9c9d2'; circle(24, shY + 40, 3.2); circle(26, shY + 66, 3.2);
+  ctx.fillStyle = '#2a2a33'; ell(0, shY - 2, 30, 11); // collar
+
+  // head (slicked-back hair, no bangs)
+  ctx.fillStyle = SK; ell(0, headY, 45, 42);
+  ctx.save(); ctx.beginPath(); ctx.ellipse(0, headY, 46.5, 43.5, 0, 0, TAU); ctx.clip();
+  ctx.fillStyle = HAIR; ctx.beginPath(); ctx.moveTo(60, headY - 60); ctx.lineTo(60, headY - 26);
+  ctx.quadraticCurveTo(34, headY - 34, 14, headY - 30); ctx.quadraticCurveTo(-14, headY - 24, -26, headY - 6);
+  ctx.quadraticCurveTo(-30, headY + 20, -34, headY + 40); ctx.lineTo(-60, headY + 50); ctx.lineTo(-60, headY - 60); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(130,90,70,.45)'; ctx.lineWidth = 2;
+  [-22, -10, 2].forEach(o => { ctx.beginPath(); ctx.moveTo(30, headY - 36 + o * .2); ctx.quadraticCurveTo(0, headY - 40 + o, -34, headY + o * .6); ctx.stroke(); });
   ctx.restore();
+  ctx.fillStyle = SK; ell(-30, headY + 6, 9, 12); ctx.fillStyle = '#d9997a'; ell(-29, headY + 6, 4.5, 7); // ear
+  // glitter near the eye and a drawn heart on the cheek
+  for (let i = 0; i < 16; i++) {
+    const gx = -12 + rnd(i + 2000) * 24, gy = headY - 6 + rnd(i + 2100) * 20;
+    ctx.fillStyle = ['#e85d9a', '#b77be0', '#f6f0ff', '#ff8fb4'][i % 4];
+    ctx.globalAlpha = .55 + .45 * Math.sin(t * 4 + i); circle(gx, gy, 1.2 + rnd(i + 2200) * 1.4);
+  }
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = '#b8467a'; ctx.lineWidth = 2.2; ctx.beginPath();
+  const hx0 = -6, hy0 = headY + 22;
+  ctx.moveTo(hx0, hy0 + 5); ctx.bezierCurveTo(hx0 - 9, hy0 - 1, hx0 - 6, hy0 - 8, hx0, hy0 - 3);
+  ctx.bezierCurveTo(hx0 + 6, hy0 - 8, hx0 + 9, hy0 - 1, hx0, hy0 + 5); ctx.stroke();
   // face
   const blink = ((t + .7) % 3.9) < .12;
   ctx.fillStyle = '#2a1712'; ctx.strokeStyle = '#2a1712'; ctx.lineWidth = 3; ctx.lineCap = 'round';
@@ -369,14 +392,18 @@ function drawGirl(g, t) {
     if (blink || g.happy > .95 && (t % 2.4) < 1.2 && t > 38) { ctx.beginPath(); ctx.arc(ex, headY + 6, 5.5, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
     else { ell(ex, headY + 4, 5, 6.5); ctx.fillStyle = '#fff'; circle(ex + 1.6, headY + 1.8, 1.8); ctx.fillStyle = '#2a1712'; }
   });
-  ctx.fillStyle = 'rgba(240,110,120,.45)'; circle(-9, headY + 17, 6.5); circle(33, headY + 16, 6.5);
-  if (g.happy > .5) { ctx.fillStyle = '#9b2c3a'; ctx.beginPath(); ctx.arc(12, headY + 19, 8.5, .05 * Math.PI, .95 * Math.PI); ctx.closePath(); ctx.fill(); }
-  else { ctx.strokeStyle = '#7a2a2a'; ctx.beginPath(); ctx.arc(12, headY + 17, 7, .2 * Math.PI, .8 * Math.PI); ctx.stroke(); }
+  ctx.fillStyle = 'rgba(240,110,120,.4)'; circle(36, headY + 17, 7.5);
+  if (g.tongue) {
+    ctx.fillStyle = '#8a2c3a'; ctx.beginPath(); ctx.arc(15, headY + 21, 8, .05 * Math.PI, .95 * Math.PI); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#f0788c'; ell(17, headY + 29 + Math.sin(t * 6) * 1.2, 6.5, 8);
+    ctx.strokeStyle = '#d4566c'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(17, headY + 25); ctx.lineTo(17, headY + 33); ctx.stroke();
+  } else if (g.happy > .5) { ctx.fillStyle = '#9b2c3a'; ctx.beginPath(); ctx.arc(14, headY + 19, 8.5, .05 * Math.PI, .95 * Math.PI); ctx.closePath(); ctx.fill(); }
+  else { ctx.strokeStyle = '#7a2a2a'; ctx.beginPath(); ctx.arc(14, headY + 17, 7, .2 * Math.PI, .8 * Math.PI); ctx.stroke(); }
   // jasmine in her hair
-  if (g.hf > 0) { flower(-26, headY - 32, g.hf * 1.1, .3); sparkle(-40, headY - 50, .9, g.hf * (1 - seg(t, 38.2, 39.2))); }
+  if (g.hf > 0) { flower(10, headY - 40, g.hf * 1.1, .3); sparkle(-6, headY - 58, .9, g.hf * (1 - seg(t, 38.2, 39.2))); }
 
   // front arm + props
-  const [hx, hy] = arm(16, lerp(-sw * .8, g.aF, g.kF), DR);
+  const [hx, hy] = arm(16, lerp(-sw * .8, g.aF, g.kF), JK);
   if (g.seed) seedAt(hx + 6, hy + 4, t, .9);
   if (g.can > .02) {
     ctx.save(); ctx.globalAlpha = cl(g.can * 2); ctx.translate(hx, hy); ctx.rotate(g.tilt);
